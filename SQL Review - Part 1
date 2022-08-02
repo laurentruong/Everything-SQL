@@ -1,0 +1,333 @@
+-- Find tables in the database:
+-- 1. PostgreSQL 14 > Databases > dvdrental > Schemas > public > Tables
+-- 2. Drop down the selected table to look at the columns represented.
+
+-- BASICS
+
+-- 1. Retrieve the first name, last name, and email of customers in the dvdrental database.
+SELECT first_name, last_name, email 
+FROM customer;
+
+-- 2. What types of movie ratings are available in the database?
+SELECT DISTINCT rating 
+FROM film;
+
+-- 3. How many types of amounts are there for payment of a dvd rental?
+SELECT COUNT(DISTINCT amount) 
+FROM payment;
+
+-- 4. Retrieve the data only associated under the surname "Smith" in the database.
+SELECT * 
+FROM customer
+WHERE last_name = 'Smith';
+
+-- 5. Retrieve all films where the rental rate is higher than $4 and the replacement cost is
+-- at or above $19.99.
+SELECT * 
+FROM film
+WHERE rental_rate > 4 AND replacement_cost >= 19.99;
+
+-- 6. Retrieve all the film titles where the rental rate is higher than $4, replacement cost is
+-- at or above $19.99, an are R rated.
+SELECT title 
+FROM film
+WHERE rental_rate > 4 AND replacement_cost >= 19.99
+AND rating = 'R';
+
+-- 7. What is the email for the customer with the name Nancy Thomas?
+SELECT email 
+FROM customer
+WHERE first_name = 'Nancy' 
+AND last_name = 'Thomas';
+
+-- 8. Give the customer the movie description for the movie "Outlaw Hanky".
+SELECT description 
+FROM film
+WHERE title = 'Outlaw Hanky';
+
+-- 9. Get the phone number for the customer who lives at "259 Ipoh Drive".
+SELECT * 
+FROM address
+WHERE address = '259 Ipoh Drive';
+
+-- 10. What are the customer IDs of the first 10 customers who created a payment?
+SELECT customer_id 
+FROM payment
+ORDER BY payment_date ASC
+LIMIT 10;
+
+-- 11. What are the titles of the 5 shortest (in length of runtime) movies?
+SELECT title, length 
+FROM film
+ORDER BY length
+LIMIT 5;
+
+-- 12. If the previous customer can watch any movie that is 50 minutes or less
+-- in run time, how many options does she have?
+SELECT COUNT(title) 
+FROM film
+WHERE length <= 50;
+
+-- 13. How many payment transactions were greater than $5.00?
+SELECT COUNT(amount) 
+FROM payment
+WHERE amount > 5.00;
+
+-- 14. How many actors have a first name that starts with the letter P?
+SELECT COUNT(*) 
+FROM actor
+WHERE first_name LIKE 'P%';
+
+-- 15. How many unique districts are our customers from?
+SELECT COUNT(DISTINCT(district)) 
+FROM address;
+
+-- 16. How many films have a rating of R and a replacement cost between
+-- $5.00 and $15.00?
+SELECT COUNT(*) 
+FROM film
+WHERE rating = 'R'
+AND replacement_cost BETWEEN 5.00 AND 15.00;
+
+-- 17. How many films have the word Truman somewhere in the title?
+SELECT COUNT(*) 
+FROM film
+WHERE title LIKE '%Truman%';
+
+-- 18. What is the average replacement cost of renting a film? Round to 2 decimal places.
+SELECT ROUND(AVG(replacement_cost), 2)
+FROM film;
+
+-- GROUP BY
+    -- In SELECT statement, columns must either have an aggregate(AGG) function or
+    -- be in the GROUP BY call.
+    -- Query Order of Execution:
+        -- SELECT
+        -- FROM
+        -- WHERE
+        -- GROUP BY
+        -- HAVING
+        -- ORDER BY
+        -- LIMIT
+
+-- 19. What customer is spending the most money on dvd rentals?
+SELECT customer_id, SUM(amount) 
+FROM payment
+GROUP BY customer_id
+ORDER BY SUM(amount) DESC;
+
+-- 20. How much does each customer spend on dvd rentals with each staff member?
+SELECT customer_id, staff_id, SUM(amount) 
+FROM payment
+GROUP BY customer_id, staff_id
+ORDER BY customer_id, staff_id ASC;
+
+-- 21. 
+-- a. Refer to the payment_date column in the payment table. Convert the payment_date column 
+-- from timestamp to date to group the dates together.
+SELECT DATE(payment_date) 
+FROM payment
+GROUP BY DATE(payment_date)
+ORDER BY DATE(payment_date) DESC;
+
+-- b. How much money is processed each day?
+SELECT DATE(payment_date), SUM(amount) 
+FROM payment
+GROUP BY DATE(payment_date)
+ORDER BY SUM(amount) DESC;
+
+-- 22. How many payments did each staff member handle and who gets the bonus, if we are giving a
+-- bonus to the most number of payments processed?
+SELECT staff_id, COUNT(payment_id) 
+FROM payment
+GROUP BY staff_id
+ORDER BY COUNT(payment_id) DESC;
+
+
+-- 23. What is the average replacement cost per MPAA rating?
+SELECT rating, ROUND(AVG(replacement_cost), 2)
+FROM film
+GROUP BY rating;
+
+-- 24. What are the customer IDs of the top 5 customers by total spend?
+SELECT customer_id, SUM(amount)
+FROM payment
+GROUP BY customer_id
+ORDER BY SUM(amount) DESC
+LIMIT 5;
+
+-- HAVING
+-- Allows us to farther filter AFTER an aggregation(AGG) has already taken place.
+-- We cannot use WHERE to filter based off of AGG results b/c those happen after a 
+-- WHERE is executed.
+-- HAVING allows us to use the AGG result as a filter along with a GROUP BY.
+-- NOTE: Use HAVING when you want to filter an AGG result.
+
+-- 25. What customers have a total amount of dvd rentals over $100?
+SELECT customer_id, SUM(amount)
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) > 100;
+
+-- 26. How many customers go to each dvd rental store? Select stores that had 
+-- more than 300 customers.
+SELECT store_id, COUNT(customer_id)
+FROM customer
+GROUP BY store_id
+HAVING COUNT(customer_id) > 300;
+
+-- 27. We are launching a platinum service for our most loyal customers. 
+-- We will assign platinum status to customers that have had 40 or more transaction payments. 
+-- What customer_ids are eligible for platinum status?
+SELECT customer_id, COUNT(payment_id)
+FROM payment
+GROUP BY customer_id
+HAVING COUNT(payment_id) >= 40;
+
+-- 28. What are the customer IDs of customers who have spent more than $100 in payment
+-- transactions with our staff_id member 2?
+SELECT customer_id, SUM(amount)
+FROM payment
+WHERE staff_id = 2
+GROUP BY customer_id
+HAVING SUM(amount) > 100;
+
+-- ASSESSMENT TEST 001
+
+-- 29. Return the customer IDs of customers who have spent at least $110 with the staff member
+-- who has an ID of 2.
+SELECT customer_id, SUM(amount)
+FROM payment
+WHERE staff_id = 2
+GROUP BY customer_id
+HAVING SUM(amount) >= 110;
+
+-- 30. How many films begin with the letter J?
+SELECT COUNT(title)
+FROM film
+WHERE title LIKE 'J%';
+
+-- 31. What customer has the highest customer ID number whose name starts with an 'E' and 
+-- has an address ID lower than 500?
+SELECT first_name, last_name
+FROM customer
+WHERE first_name LIKE 'E%'
+AND address_id < 500
+ORDER BY customer_id DESC
+LIMIT 1;
+
+-- AS
+-- AS clause allows creation of an "alias" for a column or result.
+-- Example: SELECT column AS new_column_name
+--          FROM table;
+
+-- 32. Find the number of total transactions at the dvd rental store. Change the column name
+-- of your answer.
+SELECT count(amount)
+FROM payment;
+
+-- 33. What is the total spent per customer at the dvd rental store, only including customers
+-- that have spent over $100?
+SELECT customer_id, SUM(amount) as total_spent
+FROM payment
+GROUP BY customer_id
+HAVING SUM(amount) > 100;
+
+-- INNER JOINS
+-- INNER JOIN will result with the set of records that match in both tables.
+-- Example: SELECT * FROM TableA
+--          INNER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+
+-- 34. Inner join the payment table with the customer table to match customer names with
+-- the customer's email.
+SELECT payment_id, payment.customer_id, first_name, last_name, customer.email 
+FROM payment
+INNER JOIN customer
+ON payment.customer_id = customer.customer_id;
+
+-- FULL OUTER JOINS
+-- Takes all rows when joining tables together.
+-- Example: SELECT * FROM TableA
+--          FULL OUTER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+
+-- FULL OUTER JOIN with WHERE
+-- Get rows unique to either table (rows not found in both tables).
+-- Example: SELECT * FROM TableA
+--          FULL OUTER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+--          WHERE TableA.ID IS null 
+--          OR TableB.id IS null
+
+-- 35. Display where payment information is not attached to customer, as well as customer
+-- information is not attached to payments.
+SELECT * 
+FROM customer
+FULL OUTER JOIN payment
+ON customer.customer_id = payment.customer_id
+WHERE customer.customer_id IS null
+OR payment.payment_id IS null;
+
+-- Your answer should be blank, as it is showing that there is nothing unique about
+-- customer information and payment information.
+
+-- A way to double check your answer, would be to:
+SELECT COUNT(DISTINCT customer_id) FROM customer;
+SELECT COUNT(DISTINCT customer_id) FROM payment;
+
+-- LEFT OUTER JOINS
+-- LEFT OUTER JOIN results in the set of records that are in the left table.
+-- If there is no match with the right table, the results are null.
+-- First table brought up in query would be considered the left table.
+-- Example: SELECT * FROM TableA
+--          LEFT OUTER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+
+-- LEFT OUTER JOIN with WHERE
+-- If you want entries that are unique to Table A.
+-- Example: SELECT * FROM TableA
+--          LEFT OUTER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+--          WHERE TableB.col_match IS null
+
+-- 36. Look at the Film table and the Inventory table. Query all films that are not
+-- in inventory.
+SELECT film.film_id, title, inventory_id, store_id
+FROM film
+LEFT OUTER JOIN inventory
+ON film.film_id = inventory.film_id
+WHERE inventory.film_id IS null;
+
+-- RIGHT OUTER JOINS
+-- Think of right outer join as Table B, left outer join as Table A.
+-- Example: SELECT * FROM TableA
+--          RIGHT OUTER JOIN TableB
+--          ON TableA.col_match = TableB.col_match
+
+-- UNION
+-- Used to combine the result-set of two or more SELECT statements.
+-- Serves to directly concatenate 2 results together, essentially "pasting" them together.
+-- Concatenate: Join 2 strings together.
+-- Example: SELECT column_name(s) FROM table1
+--          UNION
+--          SELECT column_name(s) FROM table2;
+
+-- 37. California sales tax laws have changed and we need to alert out customers to this
+-- through email. What are the emails of the customers who live in California?
+SELECT customer.last_name, customer.first_name, customer.email, district
+FROM address
+INNER JOIN customer
+ON address.address_id = customer.address_id
+WHERE district = 'California'
+ORDER BY customer.last_name ASC;
+
+-- 38. *** Retrieve list of all the movies actor, "Nick Wahlberg", has been in.
+SELECT title, first_name, last_name
+FROM film_actor
+INNER JOIN actor
+ON film_actor.actor_id = actor.actor_id
+INNER JOIN film
+ON film_actor.film_id = film.film_id
+WHERE first_name = 'Nick'
+AND last_name = 'Wahlberg';
