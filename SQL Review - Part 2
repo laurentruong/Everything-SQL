@@ -1,0 +1,142 @@
+-- TIMESTAMPS
+-- Typically used when creating databases and tables, rather than when querying a database.
+-- PostgreSQL can hold date and time information, such as:
+--      TIME - Contains only time.
+--      DATE - Contains only date.
+--      TIMESTAMP - Contains date and time.
+--      TIMESTAMPZ - Contains date, time, and timezone.
+-- Note: You can always remove historical information, but you can't add it.
+-- Specific date types to consider:
+--      TIMEZONE
+--      NOW
+--      TIMEOFDAY
+--      CURRENT_TIME
+--      CURRENT_DATE
+
+-- 1. Retrieve the current time zone that you are working in.
+SHOW TIMEZONE;
+
+-- 2. Retrieve the current timestamp that you are working in.
+-- Note: Upon retrieving your answer, the last 2 digits represent the timezone you are in.
+--       So if you are in timezone 04, that is EDT (Eastern Daylight Time).
+SELECT NOW();
+
+-- Another note: If you want timestamp in string format, you can do:
+SELECT TIMEOFDAY();
+
+-- 3. Pull current time and current date.
+SELECT CURRENT_TIME;
+SELECT CURRENT_DATE;
+
+-- EXTRACT
+-- Extract information from a time based data type using:
+--      EXTRACT() - Allows you to extract or obtain a sub-component of a date value.
+--                - Example: - YEAR, MONTH, DAY, WEEK, QUARTER
+--                           - SELECT EXTRACT(QUARTER FROM payment_date)
+--                             FROM payment;
+--                - Useage: EXTRACT(YEAR FROM date_column)
+--      AGE() - Calculates and returns the current age given a timestamp.
+--            - Useage: AGE(date_column)
+--      TO_CHAR() - Function to convert data types to text.
+--                - Useful for timestamp formatting.
+--                - Useage: TO_CHAR(date_col, 'mm-dd-yyyy')
+
+-- 4. Convert the payment date from timestamp formatting to string formatting.
+SELECT TO_CHAR(payment_date, 'YYYY-Mon-DD')
+FROM payment;
+
+-- 5. During which month did payments occur? Format your answer to return back the full month name.
+SELECT 
+DISTINCT(TO_CHAR(payment_date, 'Month'))
+FROM payment;
+
+-- 6. How many payments occurred on a Monday?
+SELECT COUNT(*)
+FROM payment
+WHERE EXTRACT(dow FROM payment_date) = 1;
+
+-- 7. What is the percentage different between the rental rate and replacement cost? 
+-- Round to 2 decimal places.
+SELECT ROUND(rental_rate/replacement_cost, 2) * 100 AS percent_cost
+FROM film;
+
+-- STRING FUNCTIONS AND OPERATORS
+
+-- 8. Find the number of characters in each customer's email.
+SELECT LENGTH(email)
+FROM customer;
+
+-- 9. Create an email for each customer. Use the first letter of their first name, their 
+-- entire last name, then adding "@blockbust.com". All characters must be lowercase.
+-- Example: ltruong@blockbust.com
+SELECT LOWER(LEFT(first_name, 1)) || LOWER(last_name) || '@blockbust.com' 
+AS client_email
+FROM customer;
+
+-- SUBQUERY
+-- SubQuery allows you to construct complex queries, essentially performing a query on the results
+-- of another query.
+-- Involves using two SELECT statements.
+-- SubQuery is performed first since it is inside parenthesis.
+-- We can also use the IN operator in conjunction with a subquery to check against
+-- multiple results returned.
+
+-- 10. How can we get a list of students who scored better than the average grade?
+-- SELECT student, grade
+-- FROM test_scores
+-- WHERE grade > (SELECT AVG(grade)
+-- FROM test_scores);
+
+-- 11. Retrieve the students and grades from the test scores table, where the student happened to
+-- be present inside the honor_roll_table.
+-- SELECT student, grade
+-- FROM test_scores
+-- WHERE student IN
+-- (SELECT student FROM honor_roll_table);
+
+-- EXISTS
+-- EXISTS operator is used to test for existence of rows in a subquery.
+-- Typically, a subquery is passed in the EXISTS() function to check if any rows are returned
+-- with the subquery.
+
+-- 12. Retrieve the films that have a rental rate that is higher than the average rental rate
+-- for all the films.
+SELECT title, rental_rate 
+FROM film
+WHERE rental_rate > 
+(SELECT AVG(rental_rate) FROM film);
+
+-- 13. Retrieve the film titles that have been returned between May 29, 2005  and May 30, 2005.
+SELECT film_id, title 
+FROM film
+WHERE film_id IN
+(SELECT inventory.film_id
+FROM rental
+INNER JOIN inventory ON inventory.inventory_id = rental.inventory_id
+WHERE return_date BETWEEN '2005-05-29' AND '2005-05-30');
+
+-- 14. Retrieve the customers who have at least one payment whose amount is greater than 11.
+SELECT first_name, last_name
+FROM customer AS c
+WHERE EXISTS
+(SELECT *
+FROM payment AS p
+WHERE p.customer_id = c.customer_id
+AND amount > 11);
+
+-- SELF-JOIN
+-- Self-join is a query in which a table is joined to itself.
+-- Self-joins are useful for comparing values in a column of rows within the same table.
+-- Can be viewed as a join of two copies of the same table. The table is not actually copied, but
+-- SQL performs the command though it were.
+-- Syntax: SELECT tableA.col, tableB.col
+--         FROM table as tableA
+--         JOIN table as tableB ON
+--         tableA.some_col = tableB.other_col;
+
+-- 15. Retrieve all pairs of films that have the same length.
+SELECT f1.title, f2.title, f1.length
+FROM film as f1
+INNER JOIN film as f2 ON
+f1.film_id != f2.film_id
+AND f1.length = f2.length;
